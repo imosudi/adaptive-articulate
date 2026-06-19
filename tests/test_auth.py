@@ -1,4 +1,5 @@
 from flask import url_for
+
 from app.models.user import User
 
 
@@ -72,10 +73,13 @@ def test_register_therapist_with_supervisor(client, user_service):
 
 
 def test_email_verification(client, user_service):
-    user = user_service.create_user("student@example.com", "password123", "student", is_verified=False)
+    user = user_service.create_user(
+        "student@example.com", "password123", "student", is_verified=False
+    )
     assert not user.is_verified
 
     from app.utils.tokens import generate_token
+
     token = generate_token(user.email, salt="email-verification")
 
     # Verify email
@@ -94,7 +98,9 @@ def test_email_verification_invalid_token(client):
 
 
 def test_login_and_logout(client, user_service):
-    user = user_service.create_user("student@example.com", "password123", "student", is_verified=True)
+    user = user_service.create_user(
+        "student@example.com", "password123", "student", is_verified=True
+    )
 
     # Login successfully
     response = client.post(
@@ -112,7 +118,9 @@ def test_login_and_logout(client, user_service):
 
 
 def test_login_unverified(client, user_service):
-    user = user_service.create_user("student@example.com", "password123", "student", is_verified=False)
+    user = user_service.create_user(
+        "student@example.com", "password123", "student", is_verified=False
+    )
 
     # Login should redirect to unverified
     response = client.post(
@@ -125,7 +133,9 @@ def test_login_unverified(client, user_service):
 
 
 def test_password_reset(client, user_service):
-    user = user_service.create_user("student@example.com", "password123", "student", is_verified=True)
+    user = user_service.create_user(
+        "student@example.com", "password123", "student", is_verified=True
+    )
 
     # Request password reset
     response = client.post(
@@ -136,6 +146,7 @@ def test_password_reset(client, user_service):
     assert response.status_code == 200
 
     from app.utils.tokens import generate_token
+
     token = generate_token(user.email, salt="password-reset")
 
     # Complete reset

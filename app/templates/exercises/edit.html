@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Exercise - AdaptiveArticulate{% endblock %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 0 auto;">
+    <a href="{{ url_for('exercises.index') }}" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500; margin-bottom: 1.5rem;">
+        <i class="fa-solid fa-arrow-left"></i> Back to Exercises
+    </a>
+    
+    <div class="card">
+        <div style="margin-bottom: 2rem;">
+            <h2>Edit Exercise</h2>
+            <p style="color: var(--text-secondary); margin-top: 0.25rem;">Modify exercise details for prompt ID: {{ exercise.id }}</p>
+        </div>
+        
+        <form method="POST" action="{{ url_for('exercises.edit', exercise_id=exercise.id) }}">
+            {{ form.csrf_token }}
+            
+            <div class="form-group">
+                {{ form.title.label(class="form-label") }}
+                {{ form.title(class="form-control") }}
+                {% if form.title.errors %}
+                    {% for error in form.title.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="form-group">
+                    {{ form.type.label(class="form-label") }}
+                    {{ form.type(class="form-control") }}
+                    {% if form.type.errors %}
+                        {% for error in form.type.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.difficulty.label(class="form-label") }}
+                    {{ form.difficulty(class="form-control") }}
+                    {% if form.difficulty.errors %}
+                        {% for error in form.difficulty.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                {{ form.prompt_text.label(class="form-label") }}
+                {{ form.prompt_text(class="form-control", rows="4") }}
+                {% if form.prompt_text.errors %}
+                    {% for error in form.prompt_text.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                {{ form.reference_audio_path.label(class="form-label") }}
+                {{ form.reference_audio_path(class="form-control") }}
+                <small class="form-text">Path to optional reference audio recording for students to hear the target pronunciation.</small>
+                {% if form.reference_audio_path.errors %}
+                    {% for error in form.reference_audio_path.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            <div class="mt-4" style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <a href="{{ url_for('exercises.index') }}" class="btn btn-secondary">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

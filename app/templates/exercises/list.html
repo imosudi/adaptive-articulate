@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Exercises - AdaptiveArticulate{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <div>
+        <h1 style="font-size: 2.25rem;">Exercise Bank</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.25rem;">Explore, manage, and practice speech articulation target prompts</p>
+    </div>
+    {% if current_user.role in ['therapist', 'admin'] %}
+        <a href="{{ url_for('exercises.create') }}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Create Exercise
+        </a>
+    {% endif %}
+</div>
+
+<!-- Exercise Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem;">
+    {% if exercises %}
+        {% for exercise in exercises %}
+            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 240px; padding: 1.5rem;">
+                <div>
+                    <!-- Header with tags -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">
+                            <i class="fa-solid fa-tag"></i> {{ exercise.type }}
+                        </span>
+                        
+                        <!-- Difficulty Badge -->
+                        {% if exercise.difficulty == 'easy' %}
+                            <span style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 0.8rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                                Easy
+                            </span>
+                        {% elif exercise.difficulty == 'medium' %}
+                            <span style="background: rgba(245, 158, 11, 0.15); color: var(--warning); font-size: 0.8rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 20px; border: 1px solid rgba(245, 158, 11, 0.2);">
+                                Medium
+                            </span>
+                        {% else %}
+                            <span style="background: rgba(239, 68, 68, 0.15); color: var(--danger); font-size: 0.8rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 20px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                                Hard
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text-primary);">{{ exercise.title }}</h3>
+                    <p style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 500; color: var(--text-secondary); background: rgba(0, 0, 0, 0.03); padding: 0.75rem; border-radius: var(--radius-sm); border-left: 3px solid var(--primary); margin-bottom: 1.5rem;">
+                        "{{ exercise.prompt_text }}"
+                    </p>
+                </div>
+                
+                <!-- Card Actions -->
+                <div style="display: flex; gap: 0.75rem; align-items: center; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: auto;">
+                    {% if current_user.role == 'student' %}
+                        <a href="#" class="btn btn-primary btn-block" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+                            <i class="fa-solid fa-microphone"></i> Start Practice
+                        </a>
+                    {% elif current_user.role in ['therapist', 'admin'] %}
+                        <a href="{{ url_for('exercises.edit', exercise_id=exercise.id) }}" class="btn btn-secondary" style="flex: 1; padding: 0.5rem 1rem; font-size: 0.9rem;">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </a>
+                        <form action="{{ url_for('exercises.delete', exercise_id=exercise.id) }}" method="POST" style="flex: 1; margin: 0;" onsubmit="return confirm('Are you sure you want to delete this exercise?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-block" style="padding: 0.5rem 1rem; font-size: 0.9rem; background: transparent; border: 1px solid var(--danger); color: var(--danger);">
+                                <i class="fa-solid fa-trash-can"></i> Delete
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="card text-center" style="grid-column: 1 / -1; padding: 4rem;">
+            <i class="fa-solid fa-folder-open" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+            <h3>No Exercises Found</h3>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem;">There are currently no exercises loaded in the system database.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,7 +1,10 @@
 from typing import Generator
+
 import pytest
+
 from app import create_app
 from app.extensions import db
+from app.services.exercise_service import ExerciseService
 from app.services.user_service import UserService
 
 
@@ -24,3 +27,8 @@ def client(app_instance) -> Generator:
 @pytest.fixture
 def user_service() -> UserService:
     return UserService()
+
+
+@pytest.fixture
+def exercise_service() -> ExerciseService:
+    return ExerciseService()

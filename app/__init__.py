@@ -26,6 +26,11 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     db.init_app(app)
 
     # Import models to register on metadata
+    from app.models.attempt import ExerciseAttempt  # noqa: F401
+    from app.models.audit import AuditLog  # noqa: F401
+    from app.models.exercise import Exercise  # noqa: F401
+    from app.models.notification import Notification  # noqa: F401
+    from app.models.recommendation import Recommendation  # noqa: F401
     from app.models.student import StudentProfile  # noqa: F401
     from app.models.therapist import TherapistProfile  # noqa: F401
     from app.models.user import User  # noqa: F401
@@ -86,5 +91,10 @@ def create_app(config_name: Optional[str] = None) -> Flask:
             "connect-src 'self';"
         )
         return response
+
+    # 6. CLI Commands
+    from app.utils.seeder import seed_db
+
+    app.cli.add_command(seed_db)
 
     return app
