@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - AdaptiveArticulate{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="card">
+        <div class="auth-header">
+            <h1 class="auth-logo"><i class="fa-solid fa-lock"></i></h1>
+            <h2>Welcome Back</h2>
+            <p style="color: var(--text-secondary); margin-top: 0.25rem;">Sign in to continue your speech training session</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            {{ form.csrf_token }}
+            
+            <div class="form-group">
+                {{ form.email.label(class="form-label") }}
+                {{ form.email(class="form-control", placeholder="name@example.com") }}
+                {% if form.email.errors %}
+                    {% for error in form.email.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control", placeholder="••••••••") }}
+                {% if form.password.errors %}
+                    {% for error in form.password.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            <div class="form-group" style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 1.5rem;">
+                <label class="form-check">
+                    {{ form.remember_me }}
+                    <span>{{ form.remember_me.label.text }}</span>
+                </label>
+                <a href="{{ url_for('auth.reset_password_request') }}" style="font-size: 0.9rem; font-weight: 500;">Forgot Password?</a>
+            </div>
+            
+            <div class="mt-4">
+                {{ form.submit(class="btn btn-primary btn-block") }}
+            </div>
+        </form>
+        
+        <div class="auth-links">
+            <p>New to AdaptiveArticulate? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

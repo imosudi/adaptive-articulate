@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Email - AdaptiveArticulate{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="card text-center">
+        <h1 class="auth-logo" style="color: var(--warning);"><i class="fa-solid fa-envelope-open-text"></i></h1>
+        <h2 class="mb-4">Verify Your Email</h2>
+        <p class="mb-4" style="color: var(--text-secondary);">
+            An verification link has been generated to verify your email address. 
+            Please verify your email address to access the speech articulation training tools and dashboards.
+        </p>
+        
+        <div class="form-group" style="gap: 1rem;">
+            <a href="{{ url_for('auth.resend_verification') }}" class="btn btn-primary btn-block">
+                <i class="fa-solid fa-paper-plane"></i> Resend Verification Email
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-block">
+                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

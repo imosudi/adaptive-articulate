@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AdaptiveArticulate{% endblock %}</title>
+    
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar" id="navbar">
+        <a href="{{ url_for('users.dashboard_gate') }}" class="nav-brand">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> AdaptiveArticulate
+        </a>
+        
+        <ul class="nav-links">
+            {% if current_user.is_authenticated %}
+                <li>
+                    <a href="{{ url_for('users.dashboard_gate') }}" class="nav-link">
+                        <i class="fa-solid fa-chart-line"></i> Dashboard
+                    </a>
+                </li>
+                {% if current_user.role == 'student' %}
+                    <li>
+                        <a href="{{ url_for('exercises.index') }}" class="nav-link">
+                            <i class="fa-solid fa-microphone"></i> Practice
+                        </a>
+                    </li>
+                {% elif current_user.role in ['therapist', 'admin'] %}
+                    <li>
+                        <a href="{{ url_for('exercises.index') }}" class="nav-link">
+                            <i class="fa-solid fa-book-open"></i> Exercises
+                        </a>
+                    </li>
+                {% endif %}
+                <li>
+                    <a href="{{ url_for('reports.download') }}" class="nav-link">
+                        <i class="fa-solid fa-file-pdf"></i> Reports
+                    </a>
+                </li>
+                <li>
+                    <span class="nav-link" style="color: var(--text-muted);">
+                        <i class="fa-solid fa-user"></i> {{ current_user.email.split('@')[0] }} ({{ current_user.role }})
+                    </span>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.logout') }}" class="nav-link" style="color: var(--danger);">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                    </a>
+                </li>
+            {% else %}
+                <li>
+                    <a href="{{ url_for('auth.login') }}" class="nav-link">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.register') }}" class="nav-link">
+                        <i class="fa-solid fa-user-plus"></i> Register
+                    </a>
+                </li>
+            {% endif %}
+            
+            <!-- Dark Theme Toggle -->
+            <li>
+                <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle dark mode">
+                    <i class="fa-solid fa-moon" id="theme-icon"></i>
+                </button>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for category, message in messages %}
+                        <li class="alert alert-{{ category }}">
+                            <span>{{ message }}</span>
+                            <button class="alert-close" onclick="this.parentElement.remove();">&times;</button>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Content Block -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 AdaptiveArticulate Speech Training System. Powered by Whisper AI.</p>
+    </footer>
+
+    <!-- Theme Selection Persistence script -->
+    <script>
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        // Check local storage or system preference
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            themeIcon.className = 'fa-solid fa-sun';
+        } else {
+            document.body.classList.remove('dark-theme');
+            themeIcon.className = 'fa-solid fa-moon';
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+            let theme = 'light';
+            if (document.body.classList.contains('dark-theme')) {
+                theme = 'dark';
+                themeIcon.className = 'fa-solid fa-sun';
+            } else {
+                themeIcon.className = 'fa-solid fa-moon';
+            }
+            localStorage.setItem('theme', theme);
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
