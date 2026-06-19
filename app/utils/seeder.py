@@ -110,7 +110,7 @@ def seed_db() -> None:
             "prompt_text": (
                 "When the sunlight strikes raindrops in the air, they act as a prism "
                 "and form a rainbow. The rainbow is a division of white light into "
-                "many beautiful colors. These take the shape of a long round arch, "
+                "many beautiful colours. These take the shape of a long round arch, "
                 "with its path high above, and its two ends apparently beyond the horizon."
             ),
         },
@@ -129,6 +129,12 @@ def seed_db() -> None:
             )
             click.echo(f"Created exercise: {data['title']}")
         else:
-            click.echo(f"Exercise already exists: {data['title']}")
+            if existing.prompt_text != data["prompt_text"]:
+                existing.prompt_text = data["prompt_text"]
+                from app.extensions import db
+                db.session.commit()
+                click.echo(f"Updated exercise prompt: {data['title']}")
+            else:
+                click.echo(f"Exercise already exists: {data['title']}")
 
     click.echo("Seeding complete!")

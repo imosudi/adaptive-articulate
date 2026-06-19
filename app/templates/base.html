@@ -30,7 +30,7 @@
                 {% if current_user.role == 'student' %}
                     <li>
                         <a href="{{ url_for('exercises.index') }}" class="nav-link">
-                            <i class="fa-solid fa-microphone"></i> Practice
+                            <i class="fa-solid fa-microphone"></i> Practise
                         </a>
                     </li>
                 {% elif current_user.role in ['therapist', 'admin'] %}

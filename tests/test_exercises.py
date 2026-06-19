@@ -83,7 +83,7 @@ def test_exercises_route_rbac_student(client, user_service, exercise_service):
     response = client.get("/exercises/")
     assert response.status_code == 200
     assert b"Initial &#39;s&#39; phoneme" in response.data
-    assert b"Start Practice" in response.data
+    assert b"Start Practising" in response.data
     assert b"Edit" not in response.data  # Should not see therapist edit button
 
     # Try to access create exercise - should be forbidden/redirected
