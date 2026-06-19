@@ -1,0 +1,21 @@
+[Unit]
+Description=Gunicorn instance to serve AdaptiveArticulate application
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/adaptive-articulate
+Environment="PATH=/var/www/adaptive-articulate/venv/bin"
+Environment="FLASK_ENV=production"
+Environment="SECRET_KEY=prod-secret-key-change-me"
+# Optional: Uncomment and modify if using external PostgreSQL database
+# Environment="DATABASE_URL=postgresql://articulate_user:secure_db_pass_998@localhost:5432/adaptive_articulate"
+
+ExecStart=/var/www/adaptive-articulate/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:5000 "app:create_app()"
+Restart=always
+KillMode=mixed
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
