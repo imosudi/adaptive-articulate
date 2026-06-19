@@ -1,29 +1,29 @@
 server {
     listen 80;
-    server_name _; # Replace with your server's domain name or public IP address
+    server_name {{SERVER_NAME}};
 
     client_max_body_size 25M;
 
     # Dynamic request routing to local Gunicorn instance
     location / {
-        proxy_pass http://127.0.0.1:5000;
+        proxy_pass http://127.0.0.1:{{PORT}};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Serve static assets directly from Nginx for caching and maximum performance
+    # Serve static assets directly from Nginx
     location /static/ {
-        alias /var/www/adaptive-articulate/app/static/;
+        alias {{APP_DIR}}/app/static/;
         expires 30d;
         add_header Cache-Control "public, no-transform";
     }
 
-    # Custom error pages (optional)
+    # Custom error pages
     error_page 502 /502.html;
     location = /502.html {
-        root /var/www/adaptive-articulate/app/static/;
+        root {{APP_DIR}}/app/static/;
         internal;
     }
 }
