@@ -16,6 +16,9 @@ class ExerciseAttempt(db.Model):  # type: ignore[name-defined]
     audio_path = db.Column(db.String(255), nullable=False)
     transcription = db.Column(db.Text, nullable=True)
 
+    # Relationships
+    student = db.relationship("User", backref=db.backref("attempts", cascade="all, delete-orphan"))
+
     # Whisper grading metrics
     accuracy_score = db.Column(db.Float, default=0.0)
     fluency_score = db.Column(db.Float, default=0.0)

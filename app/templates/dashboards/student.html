@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - AdaptiveArticulate{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+    .stats-card-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    .stat-mini-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    .stat-mini-card:hover {
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.06);
+    }
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        font-family: 'Outfit', sans-serif;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0.5rem 0;
+    }
+    .stat-label {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+    }
+    .progress-bar-container {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        height: 12px;
+        margin-top: 1rem;
+        overflow: hidden;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+        border-radius: 20px;
+        transition: width 0.5s ease-out;
+    }
+    .recommendation-card {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+        border: 1.5px solid rgba(99, 102, 241, 0.25);
+    }
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border-radius: 30px;
+        text-transform: uppercase;
+    }
+    .badge-easy { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .badge-medium { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .badge-hard { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    
+    .score-badge {
+        font-weight: 700;
+        padding: 0.3rem 0.75rem;
+        border-radius: 8px;
+    }
+    .score-good { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .score-avg { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .score-poor { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+    .table-container {
+        margin-top: 1.5rem;
+        overflow-x: auto;
+    }
+    .premium-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .premium-table th {
+        padding: 1rem;
+        border-bottom: 2px solid var(--border-color);
+        color: var(--text-secondary);
+        font-weight: 600;
+    }
+    .premium-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .premium-table tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    @media (max-width: 992px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem;">Welcome back, {{ current_user.email.split('@')[0] }}!</h1>
+    <p style="color: var(--text-secondary);">Here is your personalized pronunciation progress overview.</p>
+</div>
+
+<div class="dashboard-grid">
+    <!-- Left Column: Streak, Goal, Recommendations -->
+    <div style="display: flex; flex-direction: column; gap: 2rem;">
+        
+        <!-- Stats Card -->
+        <div class="card">
+            <h3 class="card-title"><i class="fa-solid fa-fire"></i> Activity & Goals</h3>
+            <div class="stats-card-group">
+                <div class="stat-mini-card">
+                    <span class="stat-label">Daily Streak</span>
+                    <div class="stat-number"><i class="fa-solid fa-bolt" style="color: var(--warning);"></i> {{ streak }}</div>
+                    <span class="stat-label">Consecutive Days</span>
+                </div>
+                <div class="stat-mini-card">
+                    <span class="stat-label">Today's Practice</span>
+                    <div class="stat-number">{{ progress_minutes }}m</div>
+                    <span class="stat-label">Goal: {{ daily_goal }}m</span>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem;">
+                    <span>Daily Goal Progress</span>
+                    <span>{{ progress_percent }}%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: {{ progress_percent }}%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendation Card -->
+        <div class="card recommendation-card">
+            <h3 class="card-title" style="border-bottom: 2px solid rgba(99, 102, 241, 0.2);"><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--secondary);"></i> Recommended Practice</h3>
+            {% if recommendation %}
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <div>
+                        <h4 style="font-size: 1.25rem; margin-bottom: 0.25rem;">{{ recommendation.exercise.title }}</h4>
+                        <span class="badge badge-{{ recommendation.exercise.difficulty }}">{{ recommendation.exercise.difficulty }}</span>
+                        <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: var(--secondary);">{{ recommendation.exercise.type }}</span>
+                    </div>
+                </div>
+                <div style="background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1.5rem;">
+                    <p style="font-size: 0.95rem; color: var(--text-secondary); font-style: italic;">"{{ recommendation.exercise.prompt_text }}"</p>
+                </div>
+                <a href="{{ url_for('exercises.practice', exercise_id=recommendation.exercise.id) }}" class="btn btn-primary btn-block">
+                    <i class="fa-solid fa-microphone"></i> Start Practice
+                </a>
+            {% else %}
+                <p style="color: var(--text-secondary);">You've completed all available exercises! Check back later for updates.</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- Right Column: Chart -->
+    <div class="card" style="display: flex; flex-direction: column;">
+        <h3 class="card-title"><i class="fa-solid fa-chart-line"></i> Performance Trend</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Your daily average pronunciation score over the last 7 days.</p>
+        <div style="flex: 1; min-height: 250px; position: relative;">
+            <canvas id="progressChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Section: Attempt History -->
+<div class="card">
+    <h3 class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity</h3>
+    {% if recent_attempts %}
+        <div class="table-container">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Exercise</th>
+                        <th>Type</th>
+                        <th>Accuracy</th>
+                        <th>Fluency</th>
+                        <th>Completeness</th>
+                        <th>Overall Score</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for att in recent_attempts %}
+                        <tr>
+                            <td>{{ att.created_at.strftime('%b %d, %Y %H:%M') }}</td>
+                            <td style="font-weight: 600;">{{ att.exercise.title }}</td>
+                            <td><span class="badge" style="background: rgba(99, 102, 241, 0.08); color: var(--primary);">{{ att.exercise.type }}</span></td>
+                            <td>{{ att.accuracy_score }}%</td>
+                            <td>{{ att.fluency_score }}%</td>
+                            <td>{{ att.completeness_score }}%</td>
+                            <td>
+                                {% if att.overall_score >= 85 %}
+                                    <span class="score-badge score-good">{{ att.overall_score }}%</span>
+                                {% elif att.overall_score >= 70 %}
+                                    <span class="score-badge score-avg">{{ att.overall_score }}%</span>
+                                {% else %}
+                                    <span class="score-badge score-poor">{{ att.overall_score }}%</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('exercises.practice', exercise_id=att.exercise.id) }}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-rotate-left"></i> Retry
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p style="color: var(--text-secondary); text-align: center; padding: 2rem 0;">You haven't recorded any exercise attempts yet. Start practicing below!</p>
+        <div style="text-align: center;">
+            <a href="{{ url_for('exercises.index') }}" class="btn btn-primary"><i class="fa-solid fa-microphone"></i> Explore Exercises</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    
+    // Check dark mode status to align chart styling
+    const isDarkMode = document.body.classList.contains('dark-theme');
+    const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+    const textColor = isDarkMode ? '#cbd5e1' : '#475569';
+
+    const labels = {{ chart_labels | tojson }};
+    const scores = {{ chart_scores | tojson }};
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Average Score',
+                data: scores,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.35,
+                pointBackgroundColor: '#8b5cf6',
+                pointBorderColor: '#fff',
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    min: 0,
+                    max: 100,
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, font: { family: 'Inter' } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: textColor, font: { family: 'Inter' } }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

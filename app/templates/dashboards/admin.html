@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Portal - AdaptiveArticulate{% endblock %}
+
+{% block extra_head %}
+<style>
+    .admin-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+    .table-container {
+        overflow-x: auto;
+        margin-top: 1.5rem;
+    }
+    .premium-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .premium-table th {
+        padding: 1rem;
+        border-bottom: 2px solid var(--border-color);
+        color: var(--text-secondary);
+        font-weight: 600;
+    }
+    .premium-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        vertical-align: middle;
+    }
+    .premium-table tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border-radius: 30px;
+    }
+    .status-active { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .status-inactive { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    
+    .role-form {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .inline-select {
+        padding: 0.4rem 0.6rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+    .action-btn-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem;">Admin Control Portal</h1>
+    <p style="color: var(--text-secondary);">Manage system users, adjust roles, verify credentials, and review security audit logs.</p>
+</div>
+
+<div class="admin-layout">
+
+    <!-- User Management Section -->
+    <div class="card">
+        <h3 class="card-title"><i class="fa-solid fa-users-gear"></i> System User Accounts</h3>
+        {% if users %}
+            <div class="table-container">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>User Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Verified</th>
+                            <th>Role Update</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                            <tr>
+                                <td style="font-weight: 600;">{{ u.email }}</td>
+                                <td>
+                                    <span class="status-badge" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">{{ u.role | upper }}</span>
+                                </td>
+                                <td>
+                                    {% if u.is_active %}
+                                        <span class="status-badge status-active"><i class="fa-solid fa-circle-check"></i> Active</span>
+                                    {% else %}
+                                        <span class="status-badge status-inactive"><i class="fa-solid fa-circle-xmark"></i> Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if u.is_verified %}
+                                        <span style="color: var(--success); font-weight: 600;"><i class="fa-solid fa-check"></i> Yes</span>
+                                    {% else %}
+                                        <span style="color: var(--danger); font-weight: 600;"><i class="fa-solid fa-xmark"></i> No</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form action="{{ url_for('admin.change_role', user_id=u.id) }}" method="POST" class="role-form">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <select name="role" class="inline-select">
+                                            <option value="student" {% if u.role == 'student' %}selected{% endif %}>Student</option>
+                                            <option value="therapist" {% if u.role == 'therapist' %}selected{% endif %}>Therapist</option>
+                                            <option value="supervisor" {% if u.role == 'supervisor' %}selected{% endif %}>Supervisor</option>
+                                            <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Admin</option>
+                                        </select>
+                                        <button type="submit" class="btn btn-secondary" style="padding: 0.35rem 0.6rem; font-size: 0.8rem;">
+                                            Change
+                                        </button>
+                                    </form>
+                                </td>
+                                <td>
+                                    <div class="action-btn-group">
+                                        {% if not u.is_verified %}
+                                            <form action="{{ url_for('admin.verify_user', user_id=u.id) }}" method="POST" style="display:inline;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                                    Verify
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        <form action="{{ url_for('admin.toggle_status', user_id=u.id) }}" method="POST" style="display:inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            {% if u.is_active %}
+                                                <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                                    Deactivate
+                                                </button>
+                                            {% else %}
+                                                <button type="submit" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: var(--success); color: var(--success);">
+                                                    Activate
+                                                </button>
+                                            {% endif %}
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p style="color: var(--text-secondary); text-align: center; padding: 2rem 0;">No system user accounts found.</p>
+        {% endif %}
+    </div>
+
+    <!-- Audit Logs Section -->
+    <div class="card">
+        <h3 class="card-title"><i class="fa-solid fa-shield-halved"></i> Security & Audit logs (Last 50)</h3>
+        {% if audit_logs %}
+            <div class="table-container">
+                <table class="premium-table" style="font-size: 0.9rem;">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>User ID</th>
+                            <th>Action Performed</th>
+                            <th>IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in audit_logs %}
+                            <tr>
+                                <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>{{ log.user_id or 'System' }}</td>
+                                <td style="font-family: monospace;">{{ log.action }}</td>
+                                <td>{{ log.ip_address or 'N/A' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p style="color: var(--text-secondary); text-align: center; padding: 2rem 0;">No system audit logs recorded.</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

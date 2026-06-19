@@ -72,3 +72,13 @@ def delete(exercise_id: int) -> Any:
     else:
         flash("Failed to delete exercise.", "danger")
     return redirect(url_for("exercises.index"))
+
+
+@exercises_bp.route("/practice/<int:exercise_id>")
+@login_required
+def practice(exercise_id: int) -> Any:
+    exercise = exercise_service.get_exercise_by_id(exercise_id)
+    if not exercise:
+        flash("Exercise not found.", "danger")
+        return redirect(url_for("exercises.index"))
+    return render_template("exercises/practice.html", exercise=exercise)

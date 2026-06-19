@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+
+{% block title %}Practice: {{ exercise.title }} - AdaptiveArticulate{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; padding: 1rem 0;">
+    <!-- Navigation Back -->
+    <a href="{{ url_for('exercises.index') }}" class="nav-link" style="display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem; color: var(--primary); font-weight: 600;">
+        <i class="fa-solid fa-arrow-left"></i> Back to Exercise Bank
+    </a>
+
+    <!-- Prompt Card -->
+    <div class="card" style="margin-bottom: 2rem; padding: 2rem; position: relative; overflow: hidden; border-left: 5px solid var(--primary);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+            <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">
+                <i class="fa-solid fa-tag"></i> {{ exercise.type }}
+            </span>
+            <span style="background: rgba(var(--primary-rgb, 99, 102, 241), 0.1); color: var(--primary); font-size: 0.8rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 20px; border: 1px solid rgba(var(--primary-rgb, 99, 102, 241), 0.2);">
+                Difficulty: {{ exercise.difficulty | capitalize }}
+            </span>
+        </div>
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">{{ exercise.title }}</h2>
+        <div style="background: rgba(0, 0, 0, 0.02); border-radius: var(--radius-md); padding: 1.5rem 2rem; margin-bottom: 1.5rem; text-align: center; border: 1px dashed var(--border-color);">
+            <p style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Speak this prompt:</p>
+            <h1 id="prompt-text" style="font-family: 'Outfit', sans-serif; font-size: 3rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; margin: 0;">
+                "{{ exercise.prompt_text }}"
+            </h1>
+        </div>
+    </div>
+
+    <!-- Recording Controls Card -->
+    <div class="card" style="padding: 2.5rem; text-align: center; margin-bottom: 2rem;">
+        <!-- Visual Waveform Canvas -->
+        <div style="position: relative; margin-bottom: 2rem; border-radius: var(--radius-md); background: rgba(0, 0, 0, 0.03); border: 1px solid var(--border-color); overflow: hidden; height: 120px;">
+            <canvas id="visualizer" style="width: 100%; height: 100%; display: block;"></canvas>
+            <div id="status-badge" style="position: absolute; top: 10px; right: 10px; background: var(--card-bg); border: 1px solid var(--border-color); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted);" id="status-dot"></span>
+                <span id="status-text" style="color: var(--text-secondary);">Ready</span>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem;">
+            <button id="record-btn" class="btn btn-primary" style="width: 80px; height: 80px; border-radius: 50%; padding: 0; display: flex; justify-content: center; align-items: center; font-size: 1.75rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);">
+                <i class="fa-solid fa-microphone" id="record-icon"></i>
+            </button>
+            <p id="instruction-text" style="color: var(--text-secondary); font-size: 0.95rem; font-weight: 500;">
+                Click the microphone button to start recording.
+            </p>
+        </div>
+
+        <!-- Local Audio Playback -->
+        <div id="playback-container" style="display: none; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); text-align: left;">
+            <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Listen to your recording</h4>
+            <audio id="audio-playback" controls style="width: 100%; border-radius: 8px; outline: none;"></audio>
+        </div>
+    </div>
+
+    <!-- Assessment Results Card (Hidden initially) -->
+    <div class="card" id="results-card" style="display: none; padding: 2.5rem; border-top: 5px solid var(--success); transition: all 0.5s ease-in-out;">
+        <h3 style="font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.75rem;">
+            <i class="fa-solid fa-square-poll-vertical" style="color: var(--success);"></i> Assessment Results
+        </h3>
+
+        <!-- Transcribed text display -->
+        <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; margin-bottom: 2rem;">
+            <p style="font-size: 0.8rem; font-weight: 700; color: var(--success); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Whisper Transcription:</p>
+            <p id="transcription-text" style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary); margin: 0; line-height: 1.5;">
+                
+            </p>
+        </div>
+
+        <!-- Scores Grid -->
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
+            <!-- Overall Score (Big Circle/Badge) -->
+            <div class="card" style="grid-column: span 2; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem; background: var(--card-bg); border: 1px solid var(--border-color);">
+                <div>
+                    <h4 style="font-size: 1.15rem; margin: 0; color: var(--text-primary);">Overall Performance</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.25rem 0 0 0;">Weighted combination of all metrics</p>
+                </div>
+                <div style="font-size: 2.25rem; font-weight: 800; color: var(--primary);" id="score-overall">0%</div>
+            </div>
+
+            <!-- Accuracy -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem;">
+                    <span style="color: var(--text-primary);"><i class="fa-solid fa-bullseye" style="color: var(--primary); margin-right: 0.25rem;"></i> Pronunciation Accuracy</span>
+                    <span id="score-accuracy" style="color: var(--primary);">0%</span>
+                </div>
+                <div style="height: 10px; background: rgba(0,0,0,0.05); border-radius: 5px; overflow: hidden; border: 1px solid var(--border-color);">
+                    <div id="bar-accuracy" style="height: 100%; width: 0%; background: var(--primary); transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                </div>
+            </div>
+
+            <!-- Completeness -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem;">
+                    <span style="color: var(--text-primary);"><i class="fa-solid fa-list-check" style="color: var(--success); margin-right: 0.25rem;"></i> Word Completeness</span>
+                    <span id="score-completeness" style="color: var(--success);">0%</span>
+                </div>
+                <div style="height: 10px; background: rgba(0,0,0,0.05); border-radius: 5px; overflow: hidden; border: 1px solid var(--border-color);">
+                    <div id="bar-completeness" style="height: 100%; width: 0%; background: var(--success); transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                </div>
+            </div>
+
+            <!-- Fluency -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; grid-column: span 2;">
+                <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem;">
+                    <span style="color: var(--text-primary);"><i class="fa-solid fa-gauge-high" style="color: var(--warning); margin-right: 0.25rem;"></i> Speaking Fluency</span>
+                    <span id="score-fluency" style="color: var(--warning);">0%</span>
+                </div>
+                <div style="height: 10px; background: rgba(0,0,0,0.05); border-radius: 5px; overflow: hidden; border: 1px solid var(--border-color);">
+                    <div id="bar-fluency" style="height: 100%; width: 0%; background: var(--warning); transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Web Audio API and Recording State variables
+    let audioCtx = null;
+    let stream = null;
+    let recorder = null;
+    let audioSource = null;
+    let analyser = null;
+    let leftChannel = [];
+    let recordingLength = 0;
+    let isRecording = false;
+    let animationFrameId = null;
+
+    // UI Elements
+    const recordBtn = document.getElementById('record-btn');
+    const recordIcon = document.getElementById('record-icon');
+    const instructionText = document.getElementById('instruction-text');
+    const statusText = document.getElementById('status-text');
+    const statusDot = document.getElementById('status-dot');
+    const visualizer = document.getElementById('visualizer');
+    const playbackContainer = document.getElementById('playback-container');
+    const audioPlayback = document.getElementById('audio-playback');
+    const resultsCard = document.getElementById('results-card');
+    
+    // Score elements
+    const textTranscription = document.getElementById('transcription-text');
+    const textOverall = document.getElementById('score-overall');
+    const textAccuracy = document.getElementById('score-accuracy');
+    const textCompleteness = document.getElementById('score-completeness');
+    const textFluency = document.getElementById('score-fluency');
+    const barAccuracy = document.getElementById('bar-accuracy');
+    const barCompleteness = document.getElementById('bar-completeness');
+    const barFluency = document.getElementById('bar-fluency');
+
+    // Setup canvas dimension
+    const canvasCtx = visualizer.getContext('2d');
+    function resizeCanvas() {
+        visualizer.width = visualizer.parentElement.clientWidth;
+        visualizer.height = 120;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Initial canvas render (flat line)
+    drawFlatLine();
+
+    function drawFlatLine() {
+        canvasCtx.fillStyle = '#f9fafb';
+        canvasCtx.fillRect(0, 0, visualizer.width, visualizer.height);
+        canvasCtx.lineWidth = 2;
+        canvasCtx.strokeStyle = '#e5e7eb';
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(0, visualizer.height / 2);
+        canvasCtx.lineTo(visualizer.width, visualizer.height / 2);
+        canvasCtx.stroke();
+    }
+
+    // Toggle recording
+    recordBtn.addEventListener('click', async () => {
+        if (!isRecording) {
+            await startRecording();
+        } else {
+            stopRecording();
+        }
+    });
+
+    async function startRecording() {
+        // Reset buffers
+        leftChannel = [];
+        recordingLength = 0;
+
+        // Initialize AudioContext
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
+
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            
+            // Set UI state
+            isRecording = true;
+            recordBtn.style.background = 'var(--danger)';
+            recordBtn.style.boxShadow = '0 10px 15px -3px rgba(239, 68, 68, 0.3)';
+            recordIcon.className = 'fa-solid fa-square';
+            instructionText.innerText = 'Click stop button when you are finished speaking.';
+            statusText.innerText = 'Recording...';
+            statusDot.style.background = 'var(--danger)';
+
+            // Hide previous results
+            resultsCard.style.display = 'none';
+            playbackContainer.style.display = 'none';
+
+            // Connect audio nodes
+            audioSource = audioCtx.createMediaStreamSource(stream);
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 1024;
+            
+            // Create processor node (4096 samples buffer, 1 input channel, 1 output channel)
+            recorder = audioCtx.createScriptProcessor(4096, 1, 1);
+            
+            recorder.onaudioprocess = (e) => {
+                if (!isRecording) return;
+                const inputData = e.inputBuffer.getChannelData(0);
+                leftChannel.push(new Float32Array(inputData));
+                recordingLength += 4096;
+            };
+
+            audioSource.connect(analyser);
+            analyser.connect(recorder);
+            recorder.connect(audioCtx.destination);
+
+            // Start visualizer animation
+            drawWaveform();
+        } catch (err) {
+            console.error('Microphone access denied:', err);
+            alert('Could not access microphone. Please grant microphone permissions and try again.');
+        }
+    }
+
+    function stopRecording() {
+        if (!isRecording) return;
+
+        isRecording = false;
+
+        // Reset UI buttons
+        recordBtn.style.background = 'var(--primary)';
+        recordBtn.style.boxShadow = '0 10px 15px -3px rgba(99, 102, 241, 0.3)';
+        recordIcon.className = 'fa-solid fa-microphone';
+        statusText.innerText = 'Processing...';
+        statusDot.style.background = 'var(--warning)';
+        instructionText.innerText = 'Uploading and assessing your speech...';
+
+        // Disconnect nodes
+        if (recorder) {
+            recorder.disconnect();
+            audioSource.disconnect();
+            analyser.disconnect();
+        }
+
+        // Stop all tracks in stream
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+
+        // Cancel visualizer animation
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
+        drawFlatLine();
+
+        // Encode to WAV and upload
+        const samples = flattenArray(leftChannel, recordingLength);
+        const wavBlob = createWavBlob(samples, audioCtx.sampleRate);
+
+        // Setup local playback url
+        const audioUrl = URL.createObjectURL(wavBlob);
+        audioPlayback.src = audioUrl;
+        playbackContainer.style.display = 'block';
+
+        // Send file to assessment endpoint
+        uploadAudio(wavBlob);
+    }
+
+    // Helper functions for WAV encoding in browser
+    function flattenArray(channelBuffer, length) {
+        const result = new Float32Array(length);
+        let offset = 0;
+        for (let i = 0; i < channelBuffer.length; i++) {
+            const buffer = channelBuffer[i];
+            result.set(buffer, offset);
+            offset += buffer.length;
+        }
+        return result;
+    }
+
+    function writeUTFBytes(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    }
+
+    function createWavBlob(samples, sampleRate) {
+        const buffer = new ArrayBuffer(44 + samples.length * 2);
+        const view = new DataView(buffer);
+
+        /* RIFF identifier */
+        writeUTFBytes(view, 0, 'RIFF');
+        /* file length */
+        view.setUint32(4, 36 + samples.length * 2, true);
+        /* RIFF type */
+        writeUTFBytes(view, 8, 'WAVE');
+        /* format chunk identifier */
+        writeUTFBytes(view, 12, 'fmt ');
+        /* format chunk length */
+        view.setUint32(16, 16, true);
+        /* sample format (raw PCM) */
+        view.setUint16(20, 1, true);
+        /* channel count */
+        view.setUint16(22, 1, true);
+        /* sample rate */
+        view.setUint32(24, sampleRate, true);
+        /* byte rate (sample rate * block align) */
+        view.setUint32(28, sampleRate * 2, true);
+        /* block align */
+        view.setUint16(32, 2, true);
+        /* bits per sample */
+        view.setUint16(34, 16, true);
+        /* data chunk identifier */
+        writeUTFBytes(view, 36, 'data');
+        /* data chunk length */
+        view.setUint32(40, samples.length * 2, true);
+
+        // write samples
+        let index = 44;
+        for (let i = 0; i < samples.length; i++) {
+            let sample = samples[i];
+            // clamp
+            sample = Math.max(-1, Math.min(1, sample));
+            // scale to 16-bit signed integer
+            view.setInt16(index, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+            index += 2;
+        }
+
+        return new Blob([view], { type: 'audio/wav' });
+    }
+
+    // Live wave visualizer
+    function drawWaveform() {
+        if (!isRecording) return;
+
+        animationFrameId = requestAnimationFrame(drawWaveform);
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyser.getByteTimeDomainData(dataArray);
+
+        // Determine if there is dark-theme
+        const isDark = document.body.classList.contains('dark-theme');
+        canvasCtx.fillStyle = isDark ? '#1f2937' : '#f9fafb';
+        canvasCtx.fillRect(0, 0, visualizer.width, visualizer.height);
+
+        canvasCtx.lineWidth = 3;
+        canvasCtx.strokeStyle = isDark ? '#818cf8' : '#6366f1';
+        canvasCtx.beginPath();
+
+        const sliceWidth = visualizer.width * 1.0 / bufferLength;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = v * visualizer.height / 2;
+
+            if (i === 0) {
+                canvasCtx.moveTo(x, y);
+            } else {
+                canvasCtx.lineTo(x, y);
+            }
+
+            x += sliceWidth;
+        }
+
+        canvasCtx.lineTo(visualizer.width, visualizer.height / 2);
+        canvasCtx.stroke();
+    }
+
+    // AJAX Upload to server
+    function uploadAudio(blob) {
+        const formData = new FormData();
+        formData.append('audio', blob, 'recording.wav');
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/recordings/assess/{{ exercise.id }}', true);
+        
+        // Add CSRF header
+        const csrfToken = '{{ csrf_token() }}';
+        xhr.setRequestHeader('X-CSRFToken', csrfToken);
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                displayResults(response);
+            } else {
+                let errMsg = 'Failed to upload/assess speech recording. Please try again.';
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.error) errMsg = response.error;
+                } catch(e) {}
+                alert(errMsg);
+                resetUI();
+            }
+        };
+
+        xhr.onerror = function() {
+            alert('A network error occurred while uploading. Please check connection.');
+            resetUI();
+        };
+
+        xhr.send(formData);
+    }
+
+    function resetUI() {
+        statusText.innerText = 'Ready';
+        statusDot.style.background = 'var(--text-muted)';
+        instructionText.innerText = 'Click the microphone button to start recording.';
+    }
+
+    function displayResults(data) {
+        // Update status UI
+        statusText.innerText = 'Done';
+        statusDot.style.background = 'var(--success)';
+        instructionText.innerText = 'Speech assessment complete! Check details below.';
+
+        // Render assessment card with animation
+        resultsCard.style.display = 'block';
+        textTranscription.innerHTML = `"${data.transcribed_text}"`;
+        
+        // Update scores
+        textOverall.innerText = `${data.overall_score}%`;
+        textAccuracy.innerText = `${data.accuracy_score}%`;
+        textCompleteness.innerText = `${data.completeness_score}%`;
+        textFluency.innerText = `${data.fluency_score}%`;
+
+        // Animate progress bars
+        setTimeout(() => {
+            barAccuracy.style.width = `${data.accuracy_score}%`;
+            barCompleteness.style.width = `${data.completeness_score}%`;
+            barFluency.style.width = `${data.fluency_score}%`;
+        }, 100);
+
+        // Scroll results card into view smoothly
+        resultsCard.scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+{% endblock %}

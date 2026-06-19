@@ -52,7 +52,7 @@
                 <!-- Card Actions -->
                 <div style="display: flex; gap: 0.75rem; align-items: center; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: auto;">
                     {% if current_user.role == 'student' %}
-                        <a href="#" class="btn btn-primary btn-block" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+                        <a href="{{ url_for('exercises.practice', exercise_id=exercise.id) }}" class="btn btn-primary btn-block" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
                             <i class="fa-solid fa-microphone"></i> Start Practice
                         </a>
                     {% elif current_user.role in ['therapist', 'admin'] %}

@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Therapist Dashboard - AdaptiveArticulate{% endblock %}
+
+{% block extra_head %}
+<style>
+    .dashboard-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+    .alert-panel {
+        background: rgba(239, 68, 68, 0.05);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .alert-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        margin-top: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+    .alert-item:hover {
+        transform: translateX(4px);
+        border-color: var(--danger);
+    }
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border-radius: 30px;
+        text-transform: uppercase;
+    }
+    .badge-alert { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    .badge-neutral { background: rgba(99, 102, 241, 0.1); color: var(--primary); }
+    
+    .score-badge {
+        font-weight: 700;
+        padding: 0.3rem 0.75rem;
+        border-radius: 8px;
+    }
+    .score-good { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .score-avg { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .score-poor { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+    .table-container {
+        overflow-x: auto;
+        margin-top: 1.5rem;
+    }
+    .premium-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .premium-table th {
+        padding: 1rem;
+        border-bottom: 2px solid var(--border-color);
+        color: var(--text-secondary);
+        font-weight: 600;
+    }
+    .premium-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .premium-table tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    .student-card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+    .student-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    .student-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--card-shadow);
+    }
+    .student-meta {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin: 0.5rem 0 1rem 0;
+    }
+    @media (max-width: 992px) {
+        .dashboard-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem;">Therapist Caseload Dashboard</h1>
+    <p style="color: var(--text-secondary);">Manage your assigned students and monitor their speech articulation training activity.</p>
+</div>
+
+<!-- Warning Alerts for struggling students -->
+{% if alerts %}
+<div class="alert-panel">
+    <h3 style="color: var(--danger); display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-triangle-exclamation"></i> Action Required: Struggling Students
+    </h3>
+    <p style="color: var(--text-secondary); font-size: 0.95rem;">The following students have an average score below 70% on their last 3 attempts.</p>
+    {% for alert in alerts %}
+        <div class="alert-item">
+            <div>
+                <strong style="font-size: 1.1rem;">{{ alert.student.email.split('@')[0] }}</strong>
+                <span class="badge badge-alert" style="margin-left: 0.5rem;">Avg Score: {{ alert.avg_score }}%</span>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    Last attempted: {{ alert.last_attempt_date.strftime('%B %d, %Y %H:%M') }}
+                </div>
+            </div>
+            <a href="{{ url_for('reports.download') }}" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+                <i class="fa-solid fa-file-pdf"></i> View Report
+            </a>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="dashboard-layout">
+    
+    <!-- Left Panel: Caseload and Recent Activity -->
+    <div style="display: flex; flex-direction: column; gap: 2rem;">
+        
+        <!-- Caseload List -->
+        <div class="card">
+            <h3 class="card-title"><i class="fa-solid fa-users"></i> Assigned Students ({{ students | length }})</h3>
+            {% if students %}
+                <div class="student-card-grid">
+                    {% for sp in students %}
+                        <div class="student-card">
+                            <h4 style="font-size: 1.2rem; margin-bottom: 0.25rem;">{{ sp.user.email.split('@')[0] }}</h4>
+                            <p class="student-meta">{{ sp.user.email }}</p>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; border-top: 1px solid var(--border-color); padding-top: 0.8rem;">
+                                <span>Daily Goal:</span>
+                                <strong>{{ sp.daily_goal_minutes }} minutes</strong>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: var(--text-secondary); text-align: center; padding: 2rem 0;">No students assigned to you yet.</p>
+            {% endif %}
+        </div>
+
+        <!-- Recent Attempts -->
+        <div class="card">
+            <h3 class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Student Activity</h3>
+            {% if recent_attempts %}
+                <div class="table-container">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Date</th>
+                                <th>Exercise</th>
+                                <th>Accuracy</th>
+                                <th>Overall</th>
+                                <th>Audio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for att in recent_attempts %}
+                                <tr>
+                                    <td style="font-weight: 600;">{{ att.student.email.split('@')[0] }}</td>
+                                    <td>{{ att.created_at.strftime('%b %d, %H:%M') }}</td>
+                                    <td>{{ att.exercise.title }}</td>
+                                    <td>{{ att.accuracy_score }}%</td>
+                                    <td>
+                                        {% if att.overall_score >= 85 %}
+                                            <span class="score-badge score-good">{{ att.overall_score }}%</span>
+                                        {% elif att.overall_score >= 70 %}
+                                            <span class="score-badge score-avg">{{ att.overall_score }}%</span>
+                                        {% else %}
+                                            <span class="score-badge score-poor">{{ att.overall_score }}%</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <audio src="{{ url_for('recordings.serve_file', attempt_id=att.id) }}" controls style="height: 30px; width: 140px; border-radius: var(--radius-sm);"></audio>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="color: var(--text-secondary); text-align: center; padding: 2rem 0;">No practice activity logged by your students yet.</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- Right Panel: Shortcut links and resources -->
+    <div class="card" style="height: fit-content;">
+        <h3 class="card-title"><i class="fa-solid fa-sliders"></i> Therapist Actions</h3>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <a href="{{ url_for('exercises.create') }}" class="btn btn-primary btn-block">
+                <i class="fa-solid fa-plus"></i> Create New Exercise
+            </a>
+            <a href="{{ url_for('exercises.index') }}" class="btn btn-secondary btn-block">
+                <i class="fa-solid fa-book-open"></i> Manage Exercise Bank
+            </a>
+            <a href="{{ url_for('reports.download') }}" class="btn btn-secondary btn-block">
+                <i class="fa-solid fa-file-pdf"></i> Download Reports
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: adaptive_articulate_db
+    environment:
+      POSTGRES_DB: adaptive_articulate
+      POSTGRES_USER: articulate_user
+      POSTGRES_PASSWORD: secure_db_pass_998
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U articulate_user -d adaptive_articulate"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: always
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: adaptive_articulate_web
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=prod-secret-key-987654321
+      - DATABASE_URL=postgresql://articulate_user:secure_db_pass_998@db:5432/adaptive_articulate
+      - UPLOAD_FOLDER=/app/uploads
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+
+volumes:
+  pgdata:
+  uploads_data:

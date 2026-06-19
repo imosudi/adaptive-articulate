@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Supervisor Dashboard - AdaptiveArticulate{% endblock %}
+
+{% block extra_head %}
+<style>
+    .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .summary-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+        text-align: center;
+    }
+    .summary-number {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--primary);
+        font-family: 'Outfit', sans-serif;
+        margin: 0.25rem 0;
+    }
+    .table-container {
+        overflow-x: auto;
+        margin-top: 1.5rem;
+    }
+    .premium-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .premium-table th {
+        padding: 1.1rem 1rem;
+        border-bottom: 2px solid var(--border-color);
+        color: var(--text-secondary);
+        font-weight: 600;
+    }
+    .premium-table td {
+        padding: 1.1rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .premium-table tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    .score-badge {
+        font-weight: 700;
+        padding: 0.3rem 0.75rem;
+        border-radius: 8px;
+    }
+    .score-good { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .score-avg { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .score-poor { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem;">Supervisor Dashboard</h1>
+    <p style="color: var(--text-secondary);">Oversee therapist performance, track student caseloads, and analyze overall system learning outcomes.</p>
+</div>
+
+<!-- Aggregated Overview Cards -->
+<div class="stats-summary">
+    <div class="summary-card">
+        <div style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600;">Supervised Therapists</div>
+        <div class="summary-number">{{ therapists | length }}</div>
+    </div>
+    <div class="summary-card">
+        <div style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600;">Total Active Students</div>
+        <div class="summary-number" style="color: var(--secondary);">{{ therapists | map(attribute='student_count') | sum }}</div>
+    </div>
+    <div class="summary-card">
+        <div style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600;">Total Practice Attempts</div>
+        <div class="summary-number" style="color: var(--info);">{{ therapists | map(attribute='total_attempts') | sum }}</div>
+    </div>
+</div>
+
+<!-- Therapists Table -->
+<div class="card">
+    <h3 class="card-title"><i class="fa-solid fa-user-doctor"></i> Supervised Therapist Overview</h3>
+    {% if therapists %}
+        <div class="table-container">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Therapist Name</th>
+                        <th>Email Address</th>
+                        <th>Assigned Students</th>
+                        <th>Attempts Logged</th>
+                        <th>Average Student Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in therapists %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ item.user.email.split('@')[0] }}</td>
+                            <td>{{ item.user.email }}</td>
+                            <td><strong style="color: var(--primary);">{{ item.student_count }}</strong></td>
+                            <td>{{ item.total_attempts }}</td>
+                            <td>
+                                {% if item.total_attempts > 0 %}
+                                    {% if item.avg_score >= 85 %}
+                                        <span class="score-badge score-good">{{ item.avg_score }}%</span>
+                                    {% elif item.avg_score >= 70 %}
+                                        <span class="score-badge score-avg">{{ item.avg_score }}%</span>
+                                    {% else %}
+                                        <span class="score-badge score-poor">{{ item.avg_score }}%</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color: var(--text-muted);">No attempts logged</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p style="color: var(--text-secondary); text-align: center; padding: 2rem 0;">No therapists assigned to your supervision yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
