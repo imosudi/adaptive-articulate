@@ -74,6 +74,11 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(api_bp, url_prefix="/api/v1")
 
+    @app.route("/")
+    def index() -> Any:
+        from flask import render_template
+        return render_template("index.html")
+
     # 5. Security Headers
     @app.after_request
     def add_security_headers(response: Response) -> Response:
