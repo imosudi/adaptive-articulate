@@ -3,7 +3,103 @@
 {% block title %}AdaptiveArticulate - Intelligent Speech Therapy Platform{% endblock %}
 
 {% block extra_head %}
-<style>
+    /* Dramatic Voice Waves Background styling */
+    .voice-waves-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -2;
+        overflow: hidden;
+        pointer-events: none;
+        opacity: 0.6;
+        transition: opacity 0.5s ease;
+    }
+    
+    body.dark-theme .voice-waves-bg {
+        opacity: 0.35;
+    }
+
+    .wave {
+        position: absolute;
+        border-radius: 40%;
+        filter: blur(70px);
+        mix-blend-mode: screen;
+        animation: morph 20s infinite alternate, float-wave 25s infinite linear;
+    }
+
+    .wave-1 {
+        width: 600px;
+        height: 600px;
+        top: -10%;
+        left: -10%;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, transparent 85%);
+        animation-duration: 18s;
+    }
+
+    .wave-2 {
+        width: 800px;
+        height: 800px;
+        bottom: -20%;
+        right: -10%;
+        background: radial-gradient(circle, rgba(139, 92, 246, 0.22) 0%, transparent 85%);
+        animation-duration: 25s;
+        animation-delay: -4s;
+    }
+
+    .wave-3 {
+        width: 500px;
+        height: 500px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 85%);
+        animation-duration: 21s;
+        animation-delay: -8s;
+    }
+
+    /* Soundwave frequency simulation in the background */
+    .frequency-grid {
+        position: absolute;
+        bottom: 2%;
+        left: 2%;
+        right: 2%;
+        height: 180px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        opacity: 0.18;
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    .freq-bar {
+        width: 4px;
+        height: 15px;
+        background: linear-gradient(to top, var(--primary), var(--secondary));
+        border-radius: 4px;
+        animation: bounce-freq 1.6s ease-in-out infinite alternate;
+        box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+    }
+
+    @keyframes morph {
+        0% { border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%; }
+        50% { border-radius: 70% 30% 52% 48% / 60% 40% 60% 40%; }
+        100% { border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%; }
+    }
+
+    @keyframes float-wave {
+        0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+        50% { transform: translate(50px, -50px) rotate(180deg) scale(1.12); }
+        100% { transform: translate(0, 0) rotate(360deg) scale(1); }
+    }
+
+    @keyframes bounce-freq {
+        0% { height: 15px; opacity: 0.35; }
+        100% { height: 120px; opacity: 1; filter: drop-shadow(0 0 12px var(--primary)); }
+    }
+
     /* Hero Area styling */
     .hero-section {
         display: grid;
@@ -323,6 +419,18 @@
 {% endblock %}
 
 {% block content %}
+<!-- Animated Voice Waves Background -->
+<div class="voice-waves-bg">
+    <div class="wave wave-1"></div>
+    <div class="wave wave-2"></div>
+    <div class="wave wave-3"></div>
+    <div class="frequency-grid">
+        {% for i in range(80) %}
+            <div class="freq-bar" style="animation-delay: {{ (i * 0.04) | round(2) }}s; animation-duration: {{ 0.8 + (i % 6) * 0.15 }}s;"></div>
+        {% endfor %}
+    </div>
+</div>
+
 <!-- Hero Section -->
 <div class="hero-section">
     <div class="hero-text">
