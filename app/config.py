@@ -51,5 +51,21 @@ class ProdConfig(Config):
     # In production, require actual secure cookies
     SESSION_COOKIE_SECURE = True
     REMEMBER_COOKIE_SECURE = True
-    # Production database should be provided via DATABASE_URL
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "")
+
+    # Parse and enforce PostgreSQL for production database
+    _raw_db_url = os.environ.get("DATABASE_URL", "")
+    if _raw_db_url:
+        if _raw_db_url.startswith("postgres://"):
+            _raw_db_url = _raw_db_url.replace("postgres://", "postgresql://", 1)
+        SQLALCHEMY_DATABASE_URI = _raw_db_url
+    else:
+        # Fallback to local PostgreSQL database
+        SQLALCHEMY_DATABASE_URI = (
+            "postgresql://postgres:postgres@localhost:5432/adaptive_articulate"
+        )
+
+    # Validate that SQLite or other non-Postgres databases are not used in production
+    if not SQLALCHEMY_DATABASE_URI.startswith("postgresql"):
+        raise ValueError(
+            f"Production database must use PostgreSQL. Provided URI: {SQLALCHEMY_DATABASE_URI}"
+        )
