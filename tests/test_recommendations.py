@@ -2,7 +2,6 @@ import pytest
 
 from app.extensions import db
 from app.models.attempt import ExerciseAttempt
-from app.models.exercise import Exercise
 from app.models.recommendation import Recommendation
 from app.services.exercise_service import ExerciseService
 from app.services.recommendation_service import RecommendationService

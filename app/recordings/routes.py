@@ -4,11 +4,12 @@ from typing import Any
 from flask import Blueprint, abort, current_app, jsonify, request, send_from_directory
 from flask_login import current_user, login_required
 
-from app.extensions import db
+from app.extensions import db, limiter
 from app.models.attempt import ExerciseAttempt
 from app.models.student import StudentProfile
 from app.models.therapist import TherapistProfile
 from app.services.assessment_service import AssessmentService
+from app.services.audit_service import AuditService
 
 recordings_bp = Blueprint("recordings", __name__)
 assessment_service = AssessmentService()
@@ -16,6 +17,7 @@ assessment_service = AssessmentService()
 
 @recordings_bp.route("/assess/<int:exercise_id>", methods=["POST"])
 @login_required
+@limiter.limit("5 per minute")
 def assess(exercise_id: int) -> Any:
     """AJAX endpoint to assess an audio recording for a given exercise."""
     if "audio" not in request.files:
@@ -43,6 +45,11 @@ def assess(exercise_id: int) -> Any:
             student_id=current_user.id,
             exercise_id=exercise_id,
             file_storage=audio_file,
+        )
+
+        AuditService.log_audit(
+            f"Exercise Attempt Logged: {attempt.exercise.title} (ID: {attempt.exercise_id}, overall score: {attempt.overall_score})",
+            user_id=current_user.id,
         )
 
         # 3. Handle recommendation updates asynchronously/proactively

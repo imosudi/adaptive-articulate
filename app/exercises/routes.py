@@ -4,6 +4,7 @@ from flask import Blueprint, flash, redirect, render_template, url_for
 from flask_login import login_required
 
 from app.exercises.forms import ExerciseForm
+from app.services.audit_service import AuditService
 from app.services.exercise_service import ExerciseService
 from app.utils.decorators import roles_required
 
@@ -24,12 +25,15 @@ def index() -> Any:
 def create() -> Any:
     form = ExerciseForm()
     if form.validate_on_submit():
-        exercise_service.create_exercise(
+        exercise = exercise_service.create_exercise(
             title=form.title.data,
             type=form.type.data,
             difficulty=form.difficulty.data,
             prompt_text=form.prompt_text.data,
             reference_audio_path=form.reference_audio_path.data or None,
+        )
+        AuditService.log_audit(
+            f"Exercise Created: {form.title.data} (ID: {exercise.id if exercise else 'Unknown'})"
         )
         flash("Exercise created successfully!", "success")
         return redirect(url_for("exercises.index"))
@@ -56,6 +60,7 @@ def edit(exercise_id: int) -> Any:
             prompt_text=form.prompt_text.data,
             reference_audio_path=form.reference_audio_path.data or None,
         )
+        AuditService.log_audit(f"Exercise Updated: {form.title.data} (ID: {exercise_id})")
         flash("Exercise updated successfully!", "success")
         return redirect(url_for("exercises.index"))
 
@@ -68,6 +73,7 @@ def edit(exercise_id: int) -> Any:
 def delete(exercise_id: int) -> Any:
     success = exercise_service.delete_exercise(exercise_id)
     if success:
+        AuditService.log_audit(f"Exercise Deleted (ID: {exercise_id})")
         flash("Exercise deleted successfully.", "success")
     else:
         flash("Failed to delete exercise.", "danger")

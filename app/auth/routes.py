@@ -4,8 +4,9 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
 from app.auth.forms import LoginForm, RegisterForm, ResetPasswordForm, ResetPasswordRequestForm
-from app.extensions import db
+from app.extensions import db, limiter
 from app.models.user import User
+from app.services.audit_service import AuditService
 from app.services.user_service import UserService
 from app.utils.tokens import generate_token, verify_token
 
@@ -14,6 +15,7 @@ user_service = UserService()
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
+@limiter.limit("5 per minute")
 def register() -> Any:
     if current_user.is_authenticated:
         return redirect(url_for("users.dashboard_gate"))
@@ -47,6 +49,9 @@ def register() -> Any:
             license_note=form.license_note.data,
         )
 
+        AuditService.log_audit(
+            f"User registration: {user.email} (role: {user.role})", user_id=user.id
+        )
         token = generate_token(user.email, salt="email-verification")
         verify_url = url_for("auth.verify_email", token=token, _external=True)
 
@@ -62,6 +67,7 @@ def register() -> Any:
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def login() -> Any:
     if current_user.is_authenticated:
         return redirect(url_for("users.dashboard_gate"))
@@ -79,6 +85,7 @@ def login() -> Any:
 
             login_user(user, remember=form.remember_me.data)
             user_service.update_last_login(user.id)
+            AuditService.log_audit(f"User login: {user.email}", user_id=user.id)
 
             if not user.is_verified:
                 flash("Please verify your email to unlock all features.", "warning")
@@ -87,6 +94,7 @@ def login() -> Any:
             next_page = request.args.get("next")
             return redirect(next_page or url_for("users.dashboard_gate"))
 
+        AuditService.log_audit(f"Failed login attempt: {form.email.data}")
         flash("Invalid email or password.", "danger")
 
     return render_template("auth/login.html", form=form)
@@ -95,6 +103,7 @@ def login() -> Any:
 @auth_bp.route("/logout")
 @login_required
 def logout() -> Any:
+    AuditService.log_audit(f"User logout: {current_user.email}", user_id=current_user.id)
     logout_user()
     flash("You have been signed out.", "info")
     return redirect(url_for("auth.login"))
@@ -116,6 +125,7 @@ def verify_email(token: str) -> Any:
         flash("Email already verified.", "info")
     else:
         user_service.verify_user(user.id)
+        AuditService.log_audit(f"Email verified: {user.email}", user_id=user.id)
         flash("Your email has been verified! You can now log in.", "success")
 
     return redirect(url_for("auth.login"))
@@ -146,12 +156,14 @@ def resend_verification() -> Any:
 
 
 @auth_bp.route("/reset-password", methods=["GET", "POST"])
+@limiter.limit("5 per minute")
 def reset_password_request() -> Any:
     if current_user.is_authenticated:
         return redirect(url_for("users.dashboard_gate"))
 
     form = ResetPasswordRequestForm()
     if form.validate_on_submit():
+        AuditService.log_audit(f"Password reset requested for {form.email.data}")
         user = user_service.get_user_by_email(form.email.data)
         if user:
             token = generate_token(user.email, salt="password-reset")
@@ -172,6 +184,7 @@ def reset_password_request() -> Any:
 
 
 @auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
+@limiter.limit("5 per minute")
 def reset_password(token: str) -> Any:
     if current_user.is_authenticated:
         return redirect(url_for("users.dashboard_gate"))
@@ -190,6 +203,7 @@ def reset_password(token: str) -> Any:
     if form.validate_on_submit():
         user.set_password(form.password.data)
         db.session.commit()
+        AuditService.log_audit(f"Password reset completed: {user.email}", user_id=user.id)
         flash("Your password has been reset! Please sign in with your new password.", "success")
         return redirect(url_for("auth.login"))
 

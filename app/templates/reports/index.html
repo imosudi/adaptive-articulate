@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Reports Hub - AdaptiveArticulate{% endblock %}
+
+{% block extra_head %}
+<style>
+    .reports-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    .report-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+    .report-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--card-shadow);
+        border-color: var(--primary-light);
+    }
+    .report-info {
+        flex: 1;
+        padding-right: 2rem;
+    }
+    .report-title {
+        font-size: 1.4rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+    .report-desc {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    .report-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        min-width: 200px;
+    }
+    .student-row {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1.2rem 1.5rem;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s ease;
+    }
+    .student-row:hover {
+        border-color: var(--primary);
+        background: rgba(255, 255, 255, 0.01);
+    }
+    .student-email {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    .student-meta {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+    .btn-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reports-container">
+    <div class="mb-4">
+        <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem;"><i class="fa-solid fa-file-invoice"></i> Reports Hub</h1>
+        <p style="color: var(--text-secondary);">Access, generate, and download performance reports and practice history records.</p>
+    </div>
+
+    <!-- STUDENT VIEW -->
+    {% if current_user.role == 'student' %}
+        <div class="report-card">
+            <div class="report-info">
+                <h3 class="report-title"><i class="fa-solid fa-graduation-cap"></i> My Speech Articulation Report</h3>
+                <p class="report-desc">
+                    Download a comprehensive PDF progress report including average speech scoring, streak metrics, target recommendations, and recent attempt history. Or export your raw log data in CSV format.
+                </p>
+            </div>
+            <div class="report-actions">
+                <a href="{{ url_for('reports.download', format='pdf') }}" class="btn btn-primary">
+                    <i class="fa-solid fa-file-pdf"></i> Download PDF Report
+                </a>
+                <a href="{{ url_for('reports.download', format='csv') }}" class="btn btn-secondary">
+                    <i class="fa-solid fa-file-csv"></i> Export CSV Log
+                </a>
+            </div>
+        </div>
+
+    <!-- THERAPIST VIEW -->
+    {% elif current_user.role == 'therapist' %}
+        <div class="card mb-4" style="padding: 1.5rem 2rem; border-color: rgba(99, 102, 241, 0.2); background: rgba(99, 102, 241, 0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h3 style="margin-bottom: 0.25rem;"><i class="fa-solid fa-people-group"></i> Caseload Exporter</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0;">Export the combined attempt logs for all students in your active caseload.</p>
+                </div>
+                <a href="{{ url_for('reports.download', caseload='true', format='csv') }}" class="btn btn-primary">
+                    <i class="fa-solid fa-file-csv"></i> Export Caseload CSV
+                </a>
+            </div>
+        </div>
+
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--text-secondary);"><i class="fa-solid fa-users"></i> Individual Student Reports</h2>
+        {% if students %}
+            {% for sp in students %}
+                <div class="student-row">
+                    <div>
+                        <div class="student-email">{{ sp.user.email }}</div>
+                        <div class="student-meta">Daily Goal: {{ sp.daily_goal_minutes }} minutes | Birth Year: {{ sp.date_of_birth_year or 'Not Set' }}</div>
+                    </div>
+                    <div class="btn-group">
+                        <a href="{{ url_for('reports.download', student_id=sp.user_id, format='pdf') }}" class="btn btn-secondary btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                            <i class="fa-solid fa-file-pdf"></i> PDF
+                        </a>
+                        <a href="{{ url_for('reports.download', student_id=sp.user_id, format='csv') }}" class="btn btn-secondary btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                            <i class="fa-solid fa-file-csv"></i> CSV
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: var(--text-secondary); text-align: center; padding: 2rem 0; border: 1px dashed var(--border-color); border-radius: var(--radius-md);">
+                No students currently assigned to your caseload.
+            </p>
+        {% endif %}
+
+    <!-- SUPERVISOR VIEW -->
+    {% elif current_user.role == 'supervisor' %}
+        <h2 style="font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-secondary);"><i class="fa-solid fa-user-tie"></i> Supervised Therapist Caseloads</h2>
+        {% if therapists %}
+            {% for tp in therapists %}
+                <div class="card mb-4">
+                    <h3 class="card-title"><i class="fa-solid fa-user-doctor"></i> Therapist: {{ tp.user.email }}</h3>
+                    {% if tp.user.students.all() %}
+                        {% for sp in tp.user.students.all() %}
+                            <div class="student-row" style="background: transparent; border-color: rgba(255, 255, 255, 0.05); margin-bottom: 0.5rem; padding: 0.8rem 1rem;">
+                                <div>
+                                    <span style="font-weight: 600;">{{ sp.user.email }}</span>
+                                </div>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('reports.download', student_id=sp.user_id, format='pdf') }}" class="btn btn-secondary btn-sm" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">
+                                        <i class="fa-solid fa-file-pdf"></i> PDF
+                                    </a>
+                                    <a href="{{ url_for('reports.download', student_id=sp.user_id, format='csv') }}" class="btn btn-secondary btn-sm" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">
+                                        <i class="fa-solid fa-file-csv"></i> CSV
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="color: var(--text-muted); font-size: 0.9rem; padding-left: 1rem;">No assigned students for this therapist.</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: var(--text-secondary); text-align: center; padding: 2rem 0; border: 1px dashed var(--border-color); border-radius: var(--radius-md);">
+                No therapists are assigned under your supervision.
+            </p>
+        {% endif %}
+
+    <!-- ADMIN VIEW -->
+    {% elif current_user.role == 'admin' %}
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--text-secondary);"><i class="fa-solid fa-users-gear"></i> System-Wide Reports (All Students)</h2>
+        {% if students %}
+            {% for sp in students %}
+                <div class="student-row">
+                    <div>
+                        <div class="student-email">{{ sp.user.email }}</div>
+                        <div class="student-meta">Therapist: {{ sp.therapist.email if sp.therapist else 'Unassigned' }} | Daily Goal: {{ sp.daily_goal_minutes }}m</div>
+                    </div>
+                    <div class="btn-group">
+                        <a href="{{ url_for('reports.download', student_id=sp.user_id, format='pdf') }}" class="btn btn-secondary btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                            <i class="fa-solid fa-file-pdf"></i> PDF
+                        </a>
+                        <a href="{{ url_for('reports.download', student_id=sp.user_id, format='csv') }}" class="btn btn-secondary btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                            <i class="fa-solid fa-file-csv"></i> CSV
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: var(--text-secondary); text-align: center; padding: 2rem 0;">No student accounts exist in the system.</p>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

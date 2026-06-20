@@ -19,6 +19,14 @@ class Recommendation(db.Model):  # type: ignore[name-defined]
     status = db.Column(db.String(20), default="pending")  # pending, completed
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    @property
+    def is_completed(self) -> bool:
+        return self.status == "completed"
+
+    @property
+    def reason(self) -> str:
+        return "Recommended exercise based on performance alignment."
+
     def __repr__(self) -> str:
         return (
             f"<Recommendation {self.id}: Student {self.student_id} "

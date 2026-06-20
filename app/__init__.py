@@ -74,9 +74,18 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(api_bp, url_prefix="/api/v1")
 
+    csrf.exempt(api_bp)
+
+    @app.route("/api/docs")
+    def api_docs_redirect() -> Any:
+        from flask import redirect
+
+        return redirect("/api/v1/docs")
+
     @app.route("/")
     def index() -> Any:
         from flask import render_template
+
         return render_template("index.html")
 
     # 5. Security Headers
@@ -91,9 +100,11 @@ def create_app(config_name: Optional[str] = None) -> Flask:
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "font-src 'self' https://cdn.jsdelivr.net; "
             "img-src 'self' data:; "
             "media-src 'self' blob:; "
-            "connect-src 'self';"
+            "connect-src 'self'; "
+            "frame-ancestors 'none';"
         )
         return response
 

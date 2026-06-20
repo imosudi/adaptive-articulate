@@ -22,6 +22,7 @@ class User(UserMixin, db.Model):  # type: ignore[name-defined]
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     last_login = db.Column(db.DateTime, nullable=True)
+    api_token = db.Column(db.String(64), unique=True, nullable=True, index=True)
 
     def set_password(self, password: str) -> None:
         self.password_hash = ph.hash(password)

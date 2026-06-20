@@ -29,6 +29,9 @@ class Config:
     SESSION_COOKIE_SECURE = False  # Set to True in ProdConfig with HTTPS
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    REMEMBER_COOKIE_SECURE = False
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = "Lax"
 
 
 class DevConfig(Config):
@@ -47,5 +50,6 @@ class ProdConfig(Config):
     DEBUG = False
     # In production, require actual secure cookies
     SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True
     # Production database should be provided via DATABASE_URL
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "")

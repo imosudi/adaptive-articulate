@@ -1,6 +1,4 @@
-from flask import url_for
 
-from app.models.user import User
 
 
 def test_register_student(client, user_service):

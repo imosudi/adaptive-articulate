@@ -3,13 +3,10 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
-from flask import url_for
 from werkzeug.datastructures import FileStorage
 
 from app.extensions import db
 from app.models.attempt import ExerciseAttempt
-from app.models.exercise import Exercise
-from app.models.student import StudentProfile
 from app.services.assessment_service import AssessmentService
 from app.services.speech_assessment.engine import WhisperSpeechAssessmentEngine
 

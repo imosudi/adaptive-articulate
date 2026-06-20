@@ -132,6 +132,7 @@ def seed_db() -> None:
             if existing.prompt_text != data["prompt_text"]:
                 existing.prompt_text = data["prompt_text"]
                 from app.extensions import db
+
                 db.session.commit()
                 click.echo(f"Updated exercise prompt: {data['title']}")
             else:
