@@ -1,0 +1,17 @@
+<VirtualHost *:80>
+    ServerName {{SERVER_NAME}}
+
+    ProxyPreserveHost On
+    ProxyPass / http://127.0.0.1:{{PORT}}/
+    ProxyPassReverse / http://127.0.0.1:{{PORT}}/
+
+    # Directly serve static assets using Apache for speed and caching
+    Alias /static {{APP_DIR}}/app/static
+    <Directory {{APP_DIR}}/app/static>
+        Require all granted
+    </Directory>
+
+    # Custom Logging
+    ErrorLog ${APACHE_LOG_DIR}/adaptive-articulate_error.log
+    CustomLog ${APACHE_LOG_DIR}/adaptive-articulate_access.log combined
+</VirtualHost>
